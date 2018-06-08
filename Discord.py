@@ -86,32 +86,23 @@ async def on_message(message):
             await client.send_message(message.channel, output)
             return
 
-        db = pymysql.connect(cfg["mysql"]["host"], cfg["mysql"]["user"], cfg["mysql"]["passwd"], cfg["mysql"]["db"])
-        try:
-            with db.cursor() as cursor:
-                query = "SELECT `text`, `timestamp`, `adminckey`, `lasteditor` FROM messages WHERE targetckey LIKE \'" + ckey + "\'"
-                cursor.execute(query)
-                result = cursor.fetchall()
-                if result:
-                    output = "Notes for player " + ckey + "\n\n"
-                    for line in result:
-                        newnote = "``` " + line[0] + "\n"
-                        newnote += "added at " + str(line[1]) + " by " + line[2] + "\n\n"
-                        newnote += "```"
+        query = "SELECT `text`, `timestamp`, `adminckey`, `lasteditor` FROM messages WHERE targetckey LIKE \'{0}\'".format(ckey)
+        result = await queryMySql(query)
+        print(result)
+        if result:
+            output = "Notes for player " + ckey + "\n\n"
+            for line in result:
+                newnote = "```" + line[0] + "\n"
+                newnote += "added at " + str(line[1]) + " by " + line[2] + "\n\n"
+                newnote += "```"
 
-                        if len(output + newnote) > 2000:
-                            """If the message would be over 2000 characters then output the message and then reset"""
-                            await client.send_message(message.channel, output)
-                            output = newnote
-                        else:
-                            output = output + newnote
-
+                if len(output + newnote) > 2000:
+                    """If the message would be over 2000 characters then output the message and then reset"""
+                    await client.send_message(message.channel, output)
+                    output = newnote
                 else:
-                    output = "No results found for " + ckey
+                    output = output + newnote
 
-                output += "```" + line[0] + "\n"
-                output += "added at " + str(line[1]) + " by " + line[2] + "\n\n"
-                output += "```"
         else:
             output = "No results found for " + ckey
 
